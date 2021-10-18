@@ -1,0 +1,16 @@
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.exe
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.deps.json
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.runtimeconfig.json
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.runtimeconfig.dev.json
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.dll
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\ref\Client.dll
+D:\repos\Security-Case-Implementation\Client\bin\Debug\net5.0\Client.pdb
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.csproj.AssemblyReference.cache
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.GeneratedMSBuildEditorConfig.editorconfig
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.AssemblyInfoInputs.cache
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.AssemblyInfo.cs
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.csproj.CoreCompileInputs.cache
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.dll
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\ref\Client.dll
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.pdb
+D:\repos\Security-Case-Implementation\Client\obj\Debug\net5.0\Client.genruntimeconfig.cache
