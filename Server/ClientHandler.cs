@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
-using System.Net;
 using System.Threading;
 
 
@@ -13,19 +12,30 @@ namespace Server
         TcpClient tcpClient;
         NetworkStream networkStream;
 
+        RsaEncryption encryption;
+
         int id;
 
-        public ClientHandler(TcpClient tcpClient, int id)
+        public ClientHandler(TcpClient tcpClient, int id, RsaEncryption encryption)
         {
+            Console.WriteLine("Preparing client-" + id);
+
             this.tcpClient = tcpClient;
             networkStream = tcpClient.GetStream();
 
             this.id = id;
 
+            this.encryption = encryption;
+            // Get client public key
+            GetClientPublicKey();
+
+            // Start normal data transfer
             Thread recieveData = new Thread(ReceiveData);
             Thread sendThread = new Thread(GetInputSendMassage);
             sendThread.Start();
             recieveData.Start();
+
+            Console.WriteLine("Client-" + id + "Ready!");
         }
 
         private void ReceiveData()
@@ -62,13 +72,44 @@ namespace Server
                 }                
             }
         }
+        private string GetReceiveData()
+        {
+            int dataSize = 0; 
+
+            try
+            {
+                byte[] byteSizeReceived = new byte[257];
+                networkStream.Read(byteSizeReceived, 0, 257);
+                string dS = Encoding.ASCII.GetString(byteSizeReceived);
+                dataSize = int.Parse(dS);
+
+                try
+                {
+                    byte[] byteReceived = new byte[dataSize];
+                    networkStream.Read(byteReceived, 0, dataSize);
+                    string theData = Convert.ToBase64String(byteReceived);
+
+                    return theData;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error Data");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error Data Size : " + e.Message);
+            }
+            
+            return null;
+        }
 
         private void GetInputSendMassage()
         {
             while (tcpClient.Connected)
             {
                 string message = Console.ReadLine();
-                SendMassage(message);
+                SendMassage(encryption.EncryptServer(message));
             }
         }
         private void SendMassage(string data)
@@ -79,6 +120,21 @@ namespace Server
 
             byte[] byteData = Encoding.ASCII.GetBytes(data);
             networkStream.Write(byteData, 0, byteData.Length);
+        }
+
+        private void GetClientPublicKey()
+        {
+            string key = new string(""); int count = 0;
+
+            for(int i = 0; i < 1; i++)
+            {
+                string data = GetReceiveData(); Console.WriteLine(data + " End");
+                key += encryption.DecryptServer(data);
+                count++;
+            }
+            //encryption.SetClientPublicKey(key);
+
+            Console.WriteLine("Client public key accepted");
         }
     }
 }

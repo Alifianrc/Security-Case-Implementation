@@ -10,10 +10,14 @@ namespace Server
     {
         private TcpListener TcpListener;
 
+        private RsaEncryption encryption;
+
         private int clientCount;
 
         public TheServer()
         {
+            encryption = new RsaEncryption();
+
             TcpListener = new TcpListener(new IPEndPoint(IPAddress.Any, 3001));
             TcpListener.Start();
 
@@ -34,7 +38,7 @@ namespace Server
                 Console.WriteLine("Client No: " + Convert.ToString(clientCount) + " connected!");
 
                 // Handle client massage
-                ClientHandler clientHandler = new ClientHandler(tcpClient, clientCount);
+                ClientHandler clientHandler = new ClientHandler(tcpClient, clientCount, encryption);
             }
         }
     }
