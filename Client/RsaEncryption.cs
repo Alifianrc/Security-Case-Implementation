@@ -65,7 +65,6 @@ namespace Client
             {
                 var rCsp = new RSACryptoServiceProvider();
                 rCsp.ImportParameters(serverPublicKey);
-                List<byte[]> listOfPartByte = new List<byte[]>();
                 byte[] byteData = Encoding.Unicode.GetBytes(dataText);
                 int readPos = 0;
                 string encryptedData = string.Empty;
@@ -85,25 +84,10 @@ namespace Client
                         readPos += byteData.Length - readPos;
                     }
 
-                    byte[] encryptedByte = csp.Encrypt(splitToEncrypt, false);
-                    listOfPartByte.Add(encryptedByte);
+                    byte[] encryptedByte = rCsp.Encrypt(splitToEncrypt, false);
+                    encryptedData += Convert.ToBase64String(encryptedByte);
+                    encryptedData += "<spt>"; 
                 }
-
-                long sizeAllByte = 0;
-                foreach(byte[] a in listOfPartByte)
-                {
-                    sizeAllByte += a.Length;
-                }
-                byte[] tempByte = new byte[sizeAllByte];
-
-                int index = 0;
-                foreach (byte[] a in listOfPartByte)
-                {
-                    Array.Copy(a, 0, tempByte, index, a.Length);
-                    index += a.Length;
-                }
-
-                encryptedData = Convert.ToBase64String(tempByte);
 
                 return encryptedData;
             }

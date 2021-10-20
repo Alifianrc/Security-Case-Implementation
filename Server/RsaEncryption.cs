@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Xml.Serialization;
 using System.Net.Sockets;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Server
 {
@@ -66,32 +67,15 @@ namespace Server
                 Console.WriteLine("Empty private key");
                 return null;
             }
-            
-            int partSize = 334;
+
             try
             {
                 var rCsp = new RSACryptoServiceProvider();
                 rCsp.ImportParameters(privateKey);
-                int iteration = dataCypher.Length / partSize;
-                string dataDecrypted = "";
-
-                for (int i = 0; i < iteration; i++)
-                {
-                    string encriptedKey = dataCypher.Substring(partSize * i, partSize); Console.WriteLine(encriptedKey + " End");
-                    byte[] byteToDecrypt = Convert.FromBase64String(encriptedKey);
-                    try
-                    {
-                        byte[] partData = rCsp.Decrypt(byteToDecrypt, false);
-                        dataDecrypted += Encoding.Unicode.GetString(partData);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error Decrypt : " + e.Message);
-                    }
-                     
-                }
-
-                return dataDecrypted;
+                byte[] dataByte = Convert.FromBase64String(dataCypher); 
+                byte[] dataPlain = rCsp.Decrypt(dataByte, false);
+                
+                return Encoding.ASCII.GetString(dataPlain);
             }
             catch (Exception e)
             {
@@ -103,11 +87,23 @@ namespace Server
         // Set client public key
         public void SetClientPublicKey(string key)
         {
-            StreamReader reader = new StreamReader(key);
-            XmlSerializer xs = new XmlSerializer(typeof(RSAParameters));
-            clientPublicKey = (RSAParameters)xs.Deserialize(reader);
+            try
+            {
+                StringReader reader = new StringReader(key);
+                XmlSerializer xs = new XmlSerializer(typeof(RSAParameters));
+                clientPublicKey = (RSAParameters)xs.Deserialize(reader);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error Set Client Key : " + e.Message);
+            }
+        }
 
-            Console.WriteLine("Client public key accepted");
+        static public string EncodeTo64(string toEncode)
+        {
+            byte[] toEncodeAsBytes = Encoding.ASCII.GetBytes(toEncode);
+            string returnValue = Convert.ToBase64String(toEncodeAsBytes);
+            return returnValue;
         }
     }
 }

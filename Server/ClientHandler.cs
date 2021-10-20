@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using System.Threading;
+using System.Runtime.Serialization.Formatters.Binary;
 
 
 namespace Server
@@ -13,6 +14,8 @@ namespace Server
         NetworkStream networkStream;
 
         RsaEncryption encryption;
+
+        BinaryFormatter formatter = new BinaryFormatter();
 
         int id;
 
@@ -39,69 +42,33 @@ namespace Server
 
         private void ReceiveData()
         {
-            int dataSize = 0;
-
             while (tcpClient.Connected)
             {
                 try
                 {
-                    byte[] byteSizeReceived = new byte[257];
-                    networkStream.Read(byteSizeReceived, 0, 257);
-                    string dS = Encoding.ASCII.GetString(byteSizeReceived);
-                    dataSize = int.Parse(dS);
+                    string receivedData = formatter.Deserialize(networkStream).ToString();
+                    string[] splitData = receivedData.Split("<spt>");
+                    string massage = string.Empty;
 
-                    try
+                    for (int i = 0; i < (splitData.Length - 1); i++)
                     {
-                        byte[] byteReceived = new byte[dataSize];
-                        networkStream.Read(byteReceived, 0, dataSize);
-                        string encryptedData = Encoding.ASCII.GetString(byteReceived);
+                        massage += encryption.DecryptServer(splitData[i]);
+                    }
 
-                        try
-                        {
-                            string theData = encryption.DecryptServer(encryptedData);
-                            Console.WriteLine("Client-" + id + " : " + theData);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Error Decryption : " + e.Message);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error Data");
-                        break;
-                    }
+                    Console.WriteLine("Client-" + id + " : " + massage);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
-                    Console.WriteLine("Error Data Size");
-                    break;
-                }                
+                    Console.WriteLine("Error Data Size : " + e.Message);
+                }
             }
         }
         private string GetReceiveData()
         {
-            int dataSize = 0; 
-
             try
             {
-                byte[] byteSizeReceived = new byte[257];
-                networkStream.Read(byteSizeReceived, 0, 257);
-                string dS = Encoding.ASCII.GetString(byteSizeReceived);
-                dataSize = int.Parse(dS);
-
-                try
-                {
-                    byte[] byteReceived = new byte[dataSize];
-                    networkStream.Read(byteReceived, 0, dataSize);
-                    string theData = Convert.ToBase64String(byteReceived);
-
-                    return theData;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error Data");
-                }
+                string receivedData = (string)formatter.Deserialize(networkStream);
+                return receivedData;
             }
             catch (Exception e)
             {
@@ -121,20 +88,22 @@ namespace Server
         }
         private void SendMassage(string data)
         {
-            string mSize = Encoding.ASCII.GetByteCount(data).ToString();
-            byte[] sizeSend = Encoding.ASCII.GetBytes(mSize);
-            networkStream.Write(sizeSend, 0, sizeSend.Length);
-
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
-            networkStream.Write(byteData, 0, byteData.Length);
+            formatter.Serialize(networkStream, data);
         }
 
         private void GetClientPublicKey()
         {
-            string encryptedData = GetReceiveData(); Console.WriteLine(encryptedData);
-            string data = encryption.DecryptServer(encryptedData);
-            Console.WriteLine(data);
-            //encryption.SetClientPublicKey(key);
+            string encryptedData = GetReceiveData();
+            string[] splitEncryptedData = encryptedData.Split("<spt>");
+
+            string key = string.Empty;
+
+            for (int i = 0; i < splitEncryptedData.Length - 1; i++)
+            {
+                key += encryption.DecryptServer(splitEncryptedData[i]);
+            }
+            Console.WriteLine(key + "End");
+            encryption.SetClientPublicKey(key);
 
             Console.WriteLine("Client public key accepted");
         }

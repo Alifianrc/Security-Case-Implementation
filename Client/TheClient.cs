@@ -17,6 +17,8 @@ namespace Client
 
         RsaEncryption encryption;
 
+        BinaryFormatter formatter;
+
         public TheClient()
         {
             Console.WriteLine("Preparing client");
@@ -24,6 +26,7 @@ namespace Client
             tcpClient = new TcpClient();
             tcpClient.Connect(IPAddress.Loopback, 3001);
             networkStream = tcpClient.GetStream();
+            formatter = new BinaryFormatter();
 
             // Install server public key inside here
             encryption = new RsaEncryption();
@@ -44,43 +47,14 @@ namespace Client
         {
             while (tcpClient.Connected)
             {
-                int dataSize = 0;
-
-                while (tcpClient.Connected)
+                try
                 {
-                    try
-                    {
-                        byte[] byteSizeReceived = new byte[257];
-                        networkStream.Read(byteSizeReceived, 0, 257);
-                        string dS = Encoding.ASCII.GetString(byteSizeReceived);
-                        dataSize = int.Parse(dS);
-
-                        try
-                        {
-                            byte[] byteReceived = new byte[dataSize];
-                            networkStream.Read(byteReceived, 0, dataSize);
-                            string encryptedData = Encoding.ASCII.GetString(byteReceived);
-                            try
-                            {
-                                string theData = encryption.DecryptServer(encryptedData);
-                                Console.WriteLine("Server : " + theData);
-                            }
-                            catch (Exception e)
-                            {
-                                Console.WriteLine("Error Decryption : " + e.Message);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Error Data");
-                            break;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error Data Size");
-                        break;
-                    }
+                    string receivedData = (string)formatter.Deserialize(networkStream);
+                    Console.WriteLine("Server : " + encryption.DecryptServer(receivedData));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error Data Size : " + e.Message);
                 }
             }
         }
@@ -95,12 +69,7 @@ namespace Client
         }
         private void SendMassage(string data)
         {
-            string mSize = Encoding.ASCII.GetByteCount(data).ToString();
-            byte[] sizeSend = Encoding.ASCII.GetBytes(mSize);
-            networkStream.Write(sizeSend, 0, sizeSend.Length);
-
-            byte[] byteData = Convert.FromBase64String(EncodeTo64(data));
-            networkStream.Write(byteData, 0, byteData.Length);
+            formatter.Serialize(networkStream, data);
         }
         string EncodeTo64(string toEncode)
 
@@ -116,7 +85,7 @@ namespace Client
             Console.WriteLine("Sending public key to server");
 
             string key = encryption.GetPublicKey();
-            string send = encryption.EncryptServer(key); Console.WriteLine(send);
+            string send = encryption.EncryptServer(key); Console.WriteLine(key + "End");
             SendMassage(send);       
         }
     }
