@@ -22,20 +22,19 @@ namespace Server
 
             this.tcpClient = tcpClient;
             networkStream = tcpClient.GetStream();
-
             this.id = id;
-
             this.encryption = encryption;
+
             // Get client public key
             GetClientPublicKey();
 
             // Start normal data transfer
-            Thread recieveData = new Thread(ReceiveData);
-            Thread sendThread = new Thread(GetInputSendMassage);
-            sendThread.Start();
-            recieveData.Start();
+            //Thread recieveData = new Thread(ReceiveData);
+            //Thread sendThread = new Thread(GetInputSendMassage);
+            //sendThread.Start();
+            //recieveData.Start();
 
-            Console.WriteLine("Client-" + id + "Ready!");
+            Console.WriteLine("Client-" + id + " Ready!");
         }
 
         private void ReceiveData()
@@ -55,9 +54,17 @@ namespace Server
                     {
                         byte[] byteReceived = new byte[dataSize];
                         networkStream.Read(byteReceived, 0, dataSize);
-                        string theData = Encoding.ASCII.GetString(byteReceived);
+                        string encryptedData = Encoding.ASCII.GetString(byteReceived);
 
-                        Console.WriteLine("Client-" + id + " : " + theData);
+                        try
+                        {
+                            string theData = encryption.DecryptServer(encryptedData);
+                            Console.WriteLine("Client-" + id + " : " + theData);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Error Decryption : " + e.Message);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -124,14 +131,9 @@ namespace Server
 
         private void GetClientPublicKey()
         {
-            string key = new string(""); int count = 0;
-
-            for(int i = 0; i < 1; i++)
-            {
-                string data = GetReceiveData(); Console.WriteLine(data + " End");
-                key += encryption.DecryptServer(data);
-                count++;
-            }
+            string encryptedData = GetReceiveData(); Console.WriteLine(encryptedData);
+            string data = encryption.DecryptServer(encryptedData);
+            Console.WriteLine(data);
             //encryption.SetClientPublicKey(key);
 
             Console.WriteLine("Client public key accepted");

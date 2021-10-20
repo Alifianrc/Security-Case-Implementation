@@ -23,8 +23,9 @@ namespace Server
         public RsaEncryption()
         {
             csp = new RSACryptoServiceProvider(2048);
-            privateKey = csp.ExportParameters(false);
-            publicKey = csp.ExportParameters(true);
+            privateKey = csp.ExportParameters(true);
+            publicKey = csp.ExportParameters(false);
+            
 
             SavePublicKey();
         }
@@ -50,7 +51,7 @@ namespace Server
         // Encrypt server private key method
         public string EncryptServer(string dataText)
         {
-            var rCsp = new RSACryptoServiceProvider();
+            var rCsp = new RSACryptoServiceProvider(); 
             rCsp.ImportParameters(privateKey);
             byte[] byteData = Encoding.Unicode.GetBytes(dataText);
             byte[] cypher = rCsp.Encrypt(byteData, false);
@@ -60,14 +61,37 @@ namespace Server
         // Decrypt server private key method
         public string DecryptServer(string dataCypher)
         {
+            if (privateKey.Equals(null))
+            {
+                Console.WriteLine("Empty private key");
+                return null;
+            }
+            
+            int partSize = 334;
             try
             {
                 var rCsp = new RSACryptoServiceProvider();
                 rCsp.ImportParameters(privateKey);
-                byte[] dataByte = Convert.FromBase64String(dataCypher);
-                byte[] dataPlain = rCsp.Decrypt(dataByte, false);
+                int iteration = dataCypher.Length / partSize;
+                string dataDecrypted = "";
 
-                return Encoding.Unicode.GetString(dataPlain);
+                for (int i = 0; i < iteration; i++)
+                {
+                    string encriptedKey = dataCypher.Substring(partSize * i, partSize); Console.WriteLine(encriptedKey + " End");
+                    byte[] byteToDecrypt = Convert.FromBase64String(encriptedKey);
+                    try
+                    {
+                        byte[] partData = rCsp.Decrypt(byteToDecrypt, false);
+                        dataDecrypted += Encoding.Unicode.GetString(partData);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Error Decrypt : " + e.Message);
+                    }
+                     
+                }
+
+                return dataDecrypted;
             }
             catch (Exception e)
             {

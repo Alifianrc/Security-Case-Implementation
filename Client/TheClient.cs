@@ -5,6 +5,8 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace Client
 {
@@ -31,8 +33,8 @@ namespace Client
 
             // Start normal data transfer
             Thread receiveThread = new Thread(RecieveMessage);
-            Thread sendThread = new Thread(GetInputSendMassage);
-            sendThread.Start();
+            //Thread sendThread = new Thread(GetInputSendMassage);
+            //sendThread.Start();
             receiveThread.Start();
 
             Console.WriteLine("Client Ready");
@@ -88,7 +90,7 @@ namespace Client
             while (tcpClient.Connected)
             {
                 string message = Console.ReadLine();
-                SendMassage(message);
+                SendMassage(encryption.EncryptServer(message));
             }
         }
         private void SendMassage(string data)
@@ -111,31 +113,11 @@ namespace Client
         private void SendPublicKeyToServer()
         {
             // Send client public key (encrypted by Server public key)
+            Console.WriteLine("Sending public key to server");
+
             string key = encryption.GetPublicKey();
-            int start = 0, lenght = key.Length / 30;
-
-            for (; start < 1;)
-            {
-                Thread.Sleep(1000);
-
-                if (lenght + start > key.Length)
-                {
-                    lenght = key.Length - start;
-                }
-                string send = key.Substring(start, lenght);
-                //SendMassage(encryption.EncryptServer(send));
-                string temp = encryption.EncryptServer(send); Console.WriteLine("Original data : ");
-                Console.WriteLine(temp + " End");
-                byte[] byteData = Convert.FromBase64String(EncodeTo64(temp)); Console.WriteLine("After convert : ");
-                temp = Convert.ToBase64String(byteData);
-                Console.WriteLine(temp + " End");
-                byte[] tempByte = Convert.FromBase64String(EncodeTo64(temp)); Console.WriteLine("After convert : ");
-                temp = Convert.ToBase64String(tempByte);
-                Console.WriteLine(temp + " End");
-                start += lenght;
-            }
-
-            Console.WriteLine("Send public key to server");
+            string send = encryption.EncryptServer(key); Console.WriteLine(send);
+            SendMassage(send);       
         }
     }
 }

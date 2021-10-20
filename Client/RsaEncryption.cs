@@ -17,14 +17,16 @@ namespace Client
 
         private RSAParameters serverPublicKey;
 
+        private static int MaxEncryptSize = 100;
+
         private string filePath = "D:\\repos\\Security-Case-Implementation\\Server-Public-Key.txt";
 
         public RsaEncryption()
         {
             // Generate new client key
             csp = new RSACryptoServiceProvider(2048);
-            privateKey = csp.ExportParameters(false);
-            publicKey = csp.ExportParameters(true);
+            privateKey = csp.ExportParameters(true);
+            publicKey = csp.ExportParameters(false);
 
             GetServerPublicKey();
         }
@@ -53,13 +55,57 @@ namespace Client
         // Encrypt server public key method
         public string EncryptServer(string dataText)
         {
+            if (serverPublicKey.Equals(null))
+            {
+                Console.WriteLine("Server public key not found");
+                return null;
+            }
+
             try
             {
                 var rCsp = new RSACryptoServiceProvider();
                 rCsp.ImportParameters(serverPublicKey);
+                List<byte[]> listOfPartByte = new List<byte[]>();
                 byte[] byteData = Encoding.Unicode.GetBytes(dataText);
-                byte[] cypher = rCsp.Encrypt(byteData, false);
-                return Convert.ToBase64String(cypher);
+                int readPos = 0;
+                string encryptedData = string.Empty;
+
+                while (byteData.Length - readPos > 0)
+                {
+                    byte[] splitToEncrypt = new byte[MaxEncryptSize];
+
+                    if (byteData.Length - (readPos + MaxEncryptSize) > 0)
+                    {
+                        Array.Copy(byteData, readPos, splitToEncrypt, 0, 100);
+                        readPos += MaxEncryptSize;
+                    }
+                    else
+                    {
+                        Array.Copy(byteData, readPos, splitToEncrypt, 0, byteData.Length - readPos);
+                        readPos += byteData.Length - readPos;
+                    }
+
+                    byte[] encryptedByte = csp.Encrypt(splitToEncrypt, false);
+                    listOfPartByte.Add(encryptedByte);
+                }
+
+                long sizeAllByte = 0;
+                foreach(byte[] a in listOfPartByte)
+                {
+                    sizeAllByte += a.Length;
+                }
+                byte[] tempByte = new byte[sizeAllByte];
+
+                int index = 0;
+                foreach (byte[] a in listOfPartByte)
+                {
+                    Array.Copy(a, 0, tempByte, index, a.Length);
+                    index += a.Length;
+                }
+
+                encryptedData = Convert.ToBase64String(tempByte);
+
+                return encryptedData;
             }
             catch (Exception e)
             {
