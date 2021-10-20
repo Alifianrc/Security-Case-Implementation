@@ -82,7 +82,7 @@ namespace Client
         private void SendPublicKeyToServer()
         {
             // Send client public key (encrypted by Server public key)
-            Console.WriteLine("Sending public key to server");
+            Console.WriteLine("Sending public key to server ...");
 
             string key = encryption.GetPublicKey();
             string send = encryption.EncryptServer(key); Console.WriteLine(key + "End");

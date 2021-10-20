@@ -102,10 +102,8 @@ namespace Server
             {
                 key += encryption.DecryptServer(splitEncryptedData[i]);
             }
-            Console.WriteLine(key + "End");
-            encryption.SetClientPublicKey(key);
 
-            Console.WriteLine("Client public key accepted");
+            encryption.SetClientPublicKey(key);
         }
     }
 }

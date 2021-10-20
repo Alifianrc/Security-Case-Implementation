@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.IO;
 using System.Xml.Serialization;
-using System.Net.Sockets;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Server
 {
@@ -19,6 +14,8 @@ namespace Server
 
         private RSAParameters clientPublicKey;
 
+        private static int MaxEncryptSize = 100;
+
         private string filePath = "D:\\repos\\Security-Case-Implementation\\Server-Public-Key.txt";
 
         public RsaEncryption()
@@ -26,7 +23,6 @@ namespace Server
             csp = new RSACryptoServiceProvider(2048);
             privateKey = csp.ExportParameters(true);
             publicKey = csp.ExportParameters(false);
-            
 
             SavePublicKey();
         }
@@ -75,7 +71,7 @@ namespace Server
                 byte[] dataByte = Convert.FromBase64String(dataCypher); 
                 byte[] dataPlain = rCsp.Decrypt(dataByte, false);
                 
-                return Encoding.ASCII.GetString(dataPlain);
+                return Encoding.Unicode.GetString(dataPlain);
             }
             catch (Exception e)
             {
@@ -92,11 +88,60 @@ namespace Server
                 StringReader reader = new StringReader(key);
                 XmlSerializer xs = new XmlSerializer(typeof(RSAParameters));
                 clientPublicKey = (RSAParameters)xs.Deserialize(reader);
+
+                Console.WriteLine("Client public key accepted!");
             }
             catch (Exception e)
             {
                 Console.WriteLine("Error Set Client Key : " + e.Message);
             }
+        }
+
+        // Encrpt data with client public key
+        public string EncryptClient(string dataText)
+        {
+            if (clientPublicKey.Equals(null))
+            {
+                Console.WriteLine("Server public key not found");
+                return null;
+            }
+
+            try
+            {
+                var rCsp = new RSACryptoServiceProvider();
+                rCsp.ImportParameters(clientPublicKey);
+                byte[] byteData = Encoding.Unicode.GetBytes(dataText);
+                int readPos = 0;
+                string encryptedData = string.Empty;
+
+                while (byteData.Length - readPos > 0)
+                {
+                    byte[] splitToEncrypt = new byte[MaxEncryptSize];
+
+                    if (byteData.Length - (readPos + MaxEncryptSize) > 0)
+                    {
+                        Array.Copy(byteData, readPos, splitToEncrypt, 0, 100);
+                        readPos += MaxEncryptSize;
+                    }
+                    else
+                    {
+                        Array.Copy(byteData, readPos, splitToEncrypt, 0, byteData.Length - readPos);
+                        readPos += byteData.Length - readPos;
+                    }
+
+                    byte[] encryptedByte = rCsp.Encrypt(splitToEncrypt, false);
+                    encryptedData += Convert.ToBase64String(encryptedByte);
+                    encryptedData += "<spt>";
+                }
+
+                return encryptedData;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error encrypt server : " + e.Message);
+            }
+
+            return null;
         }
 
         static public string EncodeTo64(string toEncode)
