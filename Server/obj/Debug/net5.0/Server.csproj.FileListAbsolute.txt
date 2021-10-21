@@ -14,3 +14,6 @@ D:\repos\Security-Case-Implementation\Server\obj\Debug\net5.0\Server.dll
 D:\repos\Security-Case-Implementation\Server\obj\Debug\net5.0\ref\Server.dll
 D:\repos\Security-Case-Implementation\Server\obj\Debug\net5.0\Server.pdb
 D:\repos\Security-Case-Implementation\Server\obj\Debug\net5.0\Server.genruntimeconfig.cache
+D:\repos\Security-Case-Implementation\Server\bin\Debug\net5.0\Security-Class-Library.dll
+D:\repos\Security-Case-Implementation\Server\bin\Debug\net5.0\Security-Class-Library.pdb
+D:\repos\Security-Case-Implementation\Server\obj\Debug\net5.0\Server.csproj.CopyComplete
