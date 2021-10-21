@@ -14,7 +14,8 @@ namespace Server
     {
         TcpClient tcpClient;
         NetworkStream networkStream;
-        RsaEncryption encryption;
+        RsaEncryption rsaEncryption;
+        AesEncryption aesEncryption;
         BinaryFormatter formatter;
         int id;
 
@@ -24,34 +25,50 @@ namespace Server
 
             this.tcpClient = tcpClient;
             networkStream = tcpClient.GetStream();
-            this.encryption = new RsaEncryption();
-            this.encryption.SetPrivateKey(encryption.privateKey);
-            this.encryption.SetPublicKey(encryption.publicKey);
+            this.rsaEncryption = new RsaEncryption();
+            this.rsaEncryption.SetPrivateKey(encryption.privateKey);
+            this.rsaEncryption.SetPublicKey(encryption.publicKey);
             formatter = new BinaryFormatter();
             this.id = id;
 
-            // Get client public key
-            GetClientPublicKey();
+            // Client preparation
+            Thread preparation = new Thread(PrepareClient);
+            preparation.Start();
+            preparation.Join();
+
+            // Start normal data transfer
+            // Using symmetric key
+            Thread receiveThread = new Thread(() => ReceiveData(aesEncryption.aes));
+            Thread sendThread = new Thread(() => GetInputSendMassage(aesEncryption.aes));
+            sendThread.Start();
+            receiveThread.Start();
 
             Console.WriteLine("Client-" + id + " Ready!");
         }
 
-        private void ReceiveData()
+        private void ReceiveData(RSAParameters key)
         {
             while (tcpClient.Connected)
             {
                 try
                 {
-                    string receivedData = formatter.Deserialize(networkStream).ToString();
-                    string[] splitData = receivedData.Split("<spt>");
-                    string massage = string.Empty;
-
-                    for (int i = 0; i < (splitData.Length - 1); i++)
-                    {
-                        //massage += encryption.DecryptServer(splitData[i]);
-                    }
-
-                    Console.WriteLine("Client-" + id + " : " + massage);
+                    string receivedData = (string)formatter.Deserialize(networkStream);
+                    Console.WriteLine("Client-" + id + " : " + rsaEncryption.Decrypt(receivedData, key));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error Data Size : " + e.Message);
+                }
+            }
+        }
+        private void ReceiveData(AesCryptoServiceProvider key)
+        {
+            while (tcpClient.Connected)
+            {
+                try
+                {
+                    string receivedData = (string)formatter.Deserialize(networkStream);
+                    Console.WriteLine("Client-" + id + " : " + aesEncryption.Decrypt(receivedData, key));
                 }
                 catch (Exception e)
                 {
@@ -64,7 +81,7 @@ namespace Server
             try
             {
                 string receivedData = (string)formatter.Deserialize(networkStream);
-                return encryption.Decrypt(receivedData, key);
+                return rsaEncryption.Decrypt(receivedData, key);
             }
             catch (Exception e)
             {
@@ -74,24 +91,51 @@ namespace Server
             return null;
         }
 
-        private void GetInputSendMassage()
+        private void GetInputSendMassage(RSAParameters key)
         {
             while (tcpClient.Connected)
             {
-                string message = Console.ReadLine();
-                //SendMassage(encryption.EncryptServer(message));
+                string massage = Console.ReadLine();
+                SendMassage(massage, key);
             }
         }
-        private void SendMassage(string data)
+        private void SendMassage(string data, RSAParameters key)
         {
-            formatter.Serialize(networkStream, data);
+            formatter.Serialize(networkStream, rsaEncryption.Encrypt(data, key));
+        }
+        private void GetInputSendMassage(AesCryptoServiceProvider key)
+        {
+            while (tcpClient.Connected)
+            {
+                string massage = Console.ReadLine();
+                SendMassage(massage, key);
+            }
+        }
+        private void SendMassage(string data, AesCryptoServiceProvider key)
+        {
+            formatter.Serialize(networkStream, aesEncryption.Encrypt(data, key));
         }
 
+        private void PrepareClient()
+        {
+            // Get client public key
+            GetClientPublicKey();
+            // Make a new Symmetric key
+            aesEncryption = new AesEncryption();
+            // Send the symmetric key
+            SendSymmetricKey();
+        }
         private void GetClientPublicKey()
         {
-            string key = GetReceiveData(encryption.privateKey);
-            encryption.AddOtherPublicKey(key);
+            string key = GetReceiveData(rsaEncryption.privateKey);
+            rsaEncryption.AddOtherPublicKey(key);
             Console.WriteLine("Client-" + id + " Public Key Accepted");
+        }
+        private void SendSymmetricKey()
+        {
+            string key = aesEncryption.ConvertKeyToString(aesEncryption.aes);
+            SendMassage(key, rsaEncryption.listOtherPublicKey[0]);
+            Console.WriteLine("Sending Symmetric Key to " + "Client-" + id + " ...");
         }
     }
 }

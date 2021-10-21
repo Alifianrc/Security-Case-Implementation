@@ -19,8 +19,6 @@ namespace Security_Class_Library
 
         private static int MaxEncryptSize = 100;
 
-       
-
         public RsaEncryption()
         {
             csp = new RSACryptoServiceProvider(2048);
@@ -91,13 +89,13 @@ namespace Security_Class_Library
                 string[] splitData = dataCypher.Split("<spt>");
                 string dataDecrypted = string.Empty;
 
-                for(int i = 0;i < splitData.Length - 1; i++)
+                for(int i = 0; i < splitData.Length - 1; i++)
                 {
                     byte[] dataByte = Convert.FromBase64String(splitData[i]);
                     byte[] dataPlain = rCsp.Decrypt(dataByte, false);
                     dataDecrypted += Encoding.Unicode.GetString(dataPlain);
                 }
-
+                
                 return dataDecrypted;
             }
             catch (Exception e)
@@ -185,6 +183,12 @@ namespace Security_Class_Library
         {
             string key = File.ReadAllText(filePath);
             return key;
+        }
+
+        public bool IsBase64String(string base64)
+        {
+            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
         }
     }
 }
