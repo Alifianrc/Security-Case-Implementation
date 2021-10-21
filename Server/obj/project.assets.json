@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net5.0": {}
+    "net5.0": {
+      "Security-Class-Library/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v5.0",
+        "compile": {
+          "bin/placeholder/Security-Class-Library.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Security-Class-Library.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Security-Class-Library/1.0.0": {
+      "type": "project",
+      "path": "../Security-Class-Library/Security-Class-Library.csproj",
+      "msbuildProject": "../Security-Class-Library/Security-Class-Library.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net5.0": []
+    "net5.0": [
+      "Security-Class-Library >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\PAVILION GAMING\\.nuget\\packages\\": {}
@@ -33,7 +52,11 @@
       "frameworks": {
         "net5.0": {
           "targetAlias": "net5.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\repos\\Security-Case-Implementation\\Security-Class-Library\\Security-Class-Library.csproj": {
+              "projectPath": "D:\\repos\\Security-Case-Implementation\\Security-Class-Library\\Security-Class-Library.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

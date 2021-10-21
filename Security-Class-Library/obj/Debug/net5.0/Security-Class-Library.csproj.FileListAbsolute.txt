@@ -1,0 +1,12 @@
+D:\repos\Security-Case-Implementation\Security-Class-Library\bin\Debug\net5.0\Security-Class-Library.deps.json
+D:\repos\Security-Case-Implementation\Security-Class-Library\bin\Debug\net5.0\Security-Class-Library.dll
+D:\repos\Security-Case-Implementation\Security-Class-Library\bin\Debug\net5.0\ref\Security-Class-Library.dll
+D:\repos\Security-Case-Implementation\Security-Class-Library\bin\Debug\net5.0\Security-Class-Library.pdb
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.csproj.AssemblyReference.cache
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.GeneratedMSBuildEditorConfig.editorconfig
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.AssemblyInfoInputs.cache
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.AssemblyInfo.cs
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.csproj.CoreCompileInputs.cache
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.dll
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\ref\Security-Class-Library.dll
+D:\repos\Security-Case-Implementation\Security-Class-Library\obj\Debug\net5.0\Security-Class-Library.pdb

@@ -4,6 +4,8 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
+using Security_Class_Library;
+using System.Security.Cryptography;
 
 
 namespace Server
@@ -12,11 +14,8 @@ namespace Server
     {
         TcpClient tcpClient;
         NetworkStream networkStream;
-
         RsaEncryption encryption;
-
-        BinaryFormatter formatter = new BinaryFormatter();
-
+        BinaryFormatter formatter;
         int id;
 
         public ClientHandler(TcpClient tcpClient, int id, RsaEncryption encryption)
@@ -25,17 +24,14 @@ namespace Server
 
             this.tcpClient = tcpClient;
             networkStream = tcpClient.GetStream();
+            this.encryption = new RsaEncryption();
+            this.encryption.SetPrivateKey(encryption.privateKey);
+            this.encryption.SetPublicKey(encryption.publicKey);
+            formatter = new BinaryFormatter();
             this.id = id;
-            this.encryption = encryption;
 
             // Get client public key
             GetClientPublicKey();
-
-            // Start normal data transfer
-            //Thread recieveData = new Thread(ReceiveData);
-            //Thread sendThread = new Thread(GetInputSendMassage);
-            //sendThread.Start();
-            //recieveData.Start();
 
             Console.WriteLine("Client-" + id + " Ready!");
         }
@@ -52,7 +48,7 @@ namespace Server
 
                     for (int i = 0; i < (splitData.Length - 1); i++)
                     {
-                        massage += encryption.DecryptServer(splitData[i]);
+                        //massage += encryption.DecryptServer(splitData[i]);
                     }
 
                     Console.WriteLine("Client-" + id + " : " + massage);
@@ -63,12 +59,12 @@ namespace Server
                 }
             }
         }
-        private string GetReceiveData()
+        private string GetReceiveData(RSAParameters key)
         {
             try
             {
                 string receivedData = (string)formatter.Deserialize(networkStream);
-                return receivedData;
+                return encryption.Decrypt(receivedData, key);
             }
             catch (Exception e)
             {
@@ -83,7 +79,7 @@ namespace Server
             while (tcpClient.Connected)
             {
                 string message = Console.ReadLine();
-                SendMassage(encryption.EncryptServer(message));
+                //SendMassage(encryption.EncryptServer(message));
             }
         }
         private void SendMassage(string data)
@@ -93,17 +89,9 @@ namespace Server
 
         private void GetClientPublicKey()
         {
-            string encryptedData = GetReceiveData();
-            string[] splitEncryptedData = encryptedData.Split("<spt>");
-
-            string key = string.Empty;
-
-            for (int i = 0; i < splitEncryptedData.Length - 1; i++)
-            {
-                key += encryption.DecryptServer(splitEncryptedData[i]);
-            }
-
-            encryption.SetClientPublicKey(key);
+            string key = GetReceiveData(encryption.privateKey);
+            encryption.AddOtherPublicKey(key);
+            Console.WriteLine("Client-" + id + " Public Key Accepted");
         }
     }
 }

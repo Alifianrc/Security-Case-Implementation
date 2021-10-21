@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using Security_Class_Library;
+using System.Security.Cryptography;
 
 namespace Client
 {
@@ -14,9 +16,7 @@ namespace Client
     {
         TcpClient tcpClient;
         NetworkStream networkStream;
-
         RsaEncryption encryption;
-
         BinaryFormatter formatter;
 
         public TheClient()
@@ -26,11 +26,11 @@ namespace Client
             tcpClient = new TcpClient();
             tcpClient.Connect(IPAddress.Loopback, 3001);
             networkStream = tcpClient.GetStream();
+            encryption = new RsaEncryption();
             formatter = new BinaryFormatter();
 
-            // Install server public key inside here
-            encryption = new RsaEncryption();
-
+            // Load server public key
+            LoadServerPublicKey();
             // Send our public key to server
             SendPublicKeyToServer();
 
@@ -50,7 +50,7 @@ namespace Client
                 try
                 {
                     string receivedData = (string)formatter.Deserialize(networkStream);
-                    Console.WriteLine("Server : " + encryption.DecryptServer(receivedData));
+                    //Console.WriteLine("Server : " + encryption.DecryptServer(receivedData));
                 }
                 catch (Exception e)
                 {
@@ -64,29 +64,24 @@ namespace Client
             while (tcpClient.Connected)
             {
                 string message = Console.ReadLine();
-                SendMassage(encryption.EncryptServer(message));
+                //SendMassage(encryption.EncryptServer(message));
             }
         }
-        private void SendMassage(string data)
+        private void SendMassage(string data, RSAParameters key)
         {
-            formatter.Serialize(networkStream, data);
-        }
-        string EncodeTo64(string toEncode)
-
-        {
-            byte[] toEncodeAsBytes = ASCIIEncoding.ASCII.GetBytes(toEncode);
-            string returnValue = Convert.ToBase64String(toEncodeAsBytes);
-            return returnValue;
+            formatter.Serialize(networkStream, encryption.Encrypt(data, key));
         }
 
+        private void LoadServerPublicKey()
+        {
+            encryption.AddOtherPublicKey(encryption.LoadKey(encryption.txtPath));
+        }
         private void SendPublicKeyToServer()
         {
             // Send client public key (encrypted by Server public key)
             Console.WriteLine("Sending public key to server ...");
-
-            string key = encryption.GetPublicKey();
-            string send = encryption.EncryptServer(key); Console.WriteLine(key + "End");
-            SendMassage(send);       
+            string key = encryption.ConvertKeyToString(encryption.publicKey);
+            SendMassage(key, encryption.listOtherPublicKey[0]);              
         }
     }
 }
