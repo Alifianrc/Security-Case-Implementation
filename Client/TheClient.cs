@@ -50,36 +50,47 @@ namespace Client
         {
             while (tcpClient.Connected)
             {
-                try
-                {
-                    string receivedData = (string)formatter.Deserialize(networkStream);
-                    Console.WriteLine("Server : " + rsaEncryption.Decrypt(receivedData, key));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error Data Size : " + e.Message);
-                }
+                byte[] byteSizeData = new byte[300];
+                networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+                int dataSize = BitConverter.ToInt32(byteSizeData);
+
+                byte[] encryptByte = new byte[dataSize];
+                networkStream.Read(encryptByte, 0, encryptByte.Length);
+                string encryptedData = Encoding.ASCII.GetString(encryptByte);
+
+                string decryptedData = rsaEncryption.Decrypt(encryptedData, key);
+
+                Console.WriteLine("Server : " + decryptedData);
             }
         }
         private void RecieveMessage(AesCryptoServiceProvider key)
         {
             while (tcpClient.Connected)
             {
-                try
-                {
-                    string receivedData = (string)formatter.Deserialize(networkStream);
-                    Console.WriteLine("Server : " + aesEncryption.Decrypt(receivedData, key));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error Data Size : " + e.Message);
-                }
+                byte[] byteSizeData = new byte[300];
+                networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+                int dataSize = BitConverter.ToInt32(byteSizeData);
+
+                byte[] encryptByte = new byte[dataSize];
+                networkStream.Read(encryptByte, 0, encryptByte.Length);
+                string encryptedData = Encoding.ASCII.GetString(encryptByte);
+
+                string decryptedData = aesEncryption.Decrypt(encryptedData, key);
+
+                Console.WriteLine("Server : " + decryptedData);
             }
         }
         private string GetReceiveData(RSAParameters key)
         {
-            string receivedData = formatter.Deserialize(networkStream).ToString();
-            return rsaEncryption.Decrypt(receivedData, key);
+            byte[] byteSizeData = new byte[300];
+            networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+            int dataSize = BitConverter.ToInt32(byteSizeData);
+
+            byte[] encryptByte = new byte[dataSize];
+            networkStream.Read(encryptByte, 0, encryptByte.Length);
+            string encryptString = Encoding.ASCII.GetString(encryptByte);
+
+            return rsaEncryption.Decrypt(encryptString, key);
         }
 
         private void GetInputSendMassage(RSAParameters key)
@@ -92,7 +103,15 @@ namespace Client
         }
         private void SendMassage(string data, RSAParameters key)
         {
-            formatter.Serialize(networkStream, rsaEncryption.Encrypt(data, key));
+            string encryptData = rsaEncryption.Encrypt(data, key);
+            byte[] byteData = Encoding.ASCII.GetBytes(encryptData);
+
+            int dataLength = byteData.Length;
+            byte[] byteDataLength = BitConverter.GetBytes(dataLength);
+
+            networkStream.Write(byteDataLength, 0, byteDataLength.Length);
+            Thread.Sleep(50);
+            networkStream.Write(byteData, 0, byteData.Length);
         }
         private void GetInputSendMassage(AesCryptoServiceProvider key)
         {
@@ -104,7 +123,15 @@ namespace Client
         }
         private void SendMassage(string data, AesCryptoServiceProvider key)
         {
-            formatter.Serialize(networkStream, aesEncryption.Encrypt(data, key));
+            string encryptData = aesEncryption.Encrypt(data, key);
+            byte[] byteData = Encoding.ASCII.GetBytes(encryptData);
+
+            int dataLength = byteData.Length;
+            byte[] byteDataLength = BitConverter.GetBytes(dataLength);
+
+            networkStream.Write(byteDataLength, 0, byteDataLength.Length);
+            Thread.Sleep(50);
+            networkStream.Write(byteData, 0, byteData.Length);
         }
 
         private void PrepareClient()

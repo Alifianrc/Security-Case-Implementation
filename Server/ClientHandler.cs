@@ -7,7 +7,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Security_Class_Library;
 using System.Security.Cryptography;
 
-
 namespace Server
 {
     class ClientHandler
@@ -19,6 +18,8 @@ namespace Server
         BinaryFormatter formatter;
         int id;
 
+        static byte[] dataBuffer = new byte[4096];
+
         public ClientHandler(TcpClient tcpClient, int id, RsaEncryption encryption)
         {
             Console.WriteLine("Preparing client-" + id);
@@ -28,6 +29,7 @@ namespace Server
             this.rsaEncryption = new RsaEncryption();
             this.rsaEncryption.SetPrivateKey(encryption.privateKey);
             this.rsaEncryption.SetPublicKey(encryption.publicKey);
+            aesEncryption = new AesEncryption();
             formatter = new BinaryFormatter();
             this.id = id;
 
@@ -50,45 +52,47 @@ namespace Server
         {
             while (tcpClient.Connected)
             {
-                try
-                {
-                    string receivedData = (string)formatter.Deserialize(networkStream);
-                    Console.WriteLine("Client-" + id + " : " + rsaEncryption.Decrypt(receivedData, key));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error Data Size : " + e.Message);
-                }
+                byte[] byteSizeData = new byte[300];
+                networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+                int dataSize = BitConverter.ToInt32(byteSizeData);
+
+                byte[] encryptByte = new byte[dataSize];
+                networkStream.Read(encryptByte, 0, encryptByte.Length);
+                string encryptedData = Encoding.ASCII.GetString(encryptByte);
+
+                string decryptedData = rsaEncryption.Decrypt(encryptedData, key);
+
+                Console.WriteLine("Client-" + id + " : " + decryptedData);
             }
         }
         private void ReceiveData(AesCryptoServiceProvider key)
         {
             while (tcpClient.Connected)
             {
-                try
-                {
-                    string receivedData = (string)formatter.Deserialize(networkStream);
-                    Console.WriteLine("Client-" + id + " : " + aesEncryption.Decrypt(receivedData, key));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error Data Size : " + e.Message);
-                }
+                byte[] byteSizeData = new byte[300];
+                networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+                int dataSize = BitConverter.ToInt32(byteSizeData);
+
+                byte[] encryptByte = new byte[dataSize];
+                networkStream.Read(encryptByte, 0, encryptByte.Length);
+                string encryptedData = Encoding.ASCII.GetString(encryptByte);
+
+                string decryptedData = aesEncryption.Decrypt(encryptedData, key);
+
+                Console.WriteLine("Client-" + id + " : " + decryptedData);
             }
         }
         private string GetReceiveData(RSAParameters key)
         {
-            try
-            {
-                string receivedData = (string)formatter.Deserialize(networkStream);
-                return rsaEncryption.Decrypt(receivedData, key);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error Data Size : " + e.Message);
-            }
-            
-            return null;
+            byte[] byteSizeData = new byte[300];
+            networkStream.Read(byteSizeData, 0, byteSizeData.Length);
+            int dataSize = BitConverter.ToInt32(byteSizeData);
+
+            byte[] encryptByte = new byte[dataSize];
+            networkStream.Read(encryptByte, 0, encryptByte.Length);
+            string encryptedData = Encoding.ASCII.GetString(encryptByte);
+
+            return rsaEncryption.Decrypt(encryptedData, key);
         }
 
         private void GetInputSendMassage(RSAParameters key)
@@ -101,7 +105,15 @@ namespace Server
         }
         private void SendMassage(string data, RSAParameters key)
         {
-            formatter.Serialize(networkStream, rsaEncryption.Encrypt(data, key));
+            string encryptData = rsaEncryption.Encrypt(data, key);
+            byte[] byteData = Encoding.ASCII.GetBytes(encryptData);
+
+            int dataLength = byteData.Length;
+            byte[] byteDataLength = BitConverter.GetBytes(dataLength);
+
+            networkStream.Write(byteDataLength, 0, byteDataLength.Length);
+            Thread.Sleep(50);
+            networkStream.Write(byteData, 0, byteData.Length);
         }
         private void GetInputSendMassage(AesCryptoServiceProvider key)
         {
@@ -113,7 +125,15 @@ namespace Server
         }
         private void SendMassage(string data, AesCryptoServiceProvider key)
         {
-            formatter.Serialize(networkStream, aesEncryption.Encrypt(data, key));
+            string encryptData = aesEncryption.Encrypt(data, key);
+            byte[] byteData = Encoding.ASCII.GetBytes(encryptData);
+
+            int dataLength = byteData.Length;
+            byte[] byteDataLength = BitConverter.GetBytes(dataLength);
+
+            networkStream.Write(byteDataLength, 0, byteDataLength.Length);
+            Thread.Sleep(50);
+            networkStream.Write(byteData, 0, byteData.Length);
         }
 
         private void PrepareClient()
@@ -121,7 +141,7 @@ namespace Server
             // Get client public key
             GetClientPublicKey();
             // Make a new Symmetric key
-            aesEncryption = new AesEncryption();
+            aesEncryption.GenerateNewKey();
             // Send the symmetric key
             SendSymmetricKey();
         }

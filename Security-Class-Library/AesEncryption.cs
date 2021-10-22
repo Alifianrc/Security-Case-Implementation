@@ -12,16 +12,18 @@ namespace Security_Class_Library
     public class AesEncryption
     {
         public AesCryptoServiceProvider aes { get; private set; }
+        byte[] keyIV = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         public AesEncryption()
         {
             aes = new AesCryptoServiceProvider();
-            aes.BlockSize = 128;
-            aes.KeySize = 256;
-            aes.GenerateIV();
+            aes.IV = keyIV;
+        }
+
+        public void GenerateNewKey()
+        {
             aes.GenerateKey();
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
+            Console.WriteLine("New Symmetric key : " + Convert.ToBase64String(aes.Key));
         }
 
         public string Encrypt(string data, AesCryptoServiceProvider key)
@@ -29,9 +31,10 @@ namespace Security_Class_Library
             try
             {
                 ICryptoTransform transform = key.CreateEncryptor();
-                byte[] encryptedByte = transform.TransformFinalBlock(Encoding.Unicode.GetBytes(data), 0, data.Length);
-
-                return Convert.ToBase64String(encryptedByte);
+                byte[] dataByte = Encoding.ASCII.GetBytes(data);
+                byte[] encryptedByte = transform.TransformFinalBlock(dataByte, 0, dataByte.Length);
+                string encryptedData = Convert.ToBase64String(encryptedByte);
+                return encryptedData;
             }
             catch (Exception e)
             {
@@ -45,9 +48,10 @@ namespace Security_Class_Library
             try
             {
                 ICryptoTransform transform = key.CreateDecryptor();
-                byte[] decryptedByte = transform.TransformFinalBlock(Convert.FromBase64String(data), 0, data.Length);
-
-                return Convert.ToBase64String(decryptedByte);
+                byte[] encryptedByte = Convert.FromBase64String(data);
+                byte[] decryptedByte = transform.TransformFinalBlock(encryptedByte, 0, encryptedByte.Length);
+                string decryptedData = Encoding.ASCII.GetString(decryptedByte);
+                return decryptedData;
             }
             catch(Exception e)
             {
@@ -59,13 +63,14 @@ namespace Security_Class_Library
 
         public string ConvertKeyToString(AesCryptoServiceProvider key)
         {
-            string theKey = Convert.ToBase64String(key.Key); Console.WriteLine("Origin :" + theKey);
+            string theKey = Convert.ToBase64String(key.Key);
             return theKey;
         }
         public AesCryptoServiceProvider ConvertStringToKey(string key)
         {
-            AesCryptoServiceProvider aesCrypto = new AesCryptoServiceProvider(); Console.WriteLine("New :" + key);
-            aesCrypto.Key = Convert.FromBase64String(key);
+            AesCryptoServiceProvider aesCrypto = new AesCryptoServiceProvider();
+            aesCrypto.Key = Convert.FromBase64String(Split64(key));
+            aesCrypto.IV = keyIV;
             return aesCrypto;
         }
 
@@ -74,7 +79,11 @@ namespace Security_Class_Library
             aes = aesCrypto;
         }
 
-
+        private string Split64(string data)
+        {
+            string[] spt = data.Split("=");
+            return spt[0] + "=";
+        }
         public bool IsBase64String(string base64)
         {
             Span<byte> buffer = new Span<byte>(new byte[base64.Length]);

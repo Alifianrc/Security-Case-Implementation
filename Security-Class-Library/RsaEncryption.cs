@@ -64,7 +64,7 @@ namespace Security_Class_Library
                     encryptedData += Convert.ToBase64String(encryptedByte);
                     encryptedData += "<spt>";
                 }
-
+                
                 return encryptedData;
             }
             catch (Exception e)
